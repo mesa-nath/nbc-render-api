@@ -13,7 +13,13 @@ app.get('/', (req, res) => {
 
 async function getNbcRates(date) {
   const url = "https://www.nbc.gov.kh/english/economic_research/exchange_rate.php";
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({ 
+    headless: true,
+
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath: process.env.CHROME_BIN || undefined, // Render will use bundled Chromium
+
+   });
   const page = await browser.newPage();
 
   await page.goto(url, { waitUntil: "networkidle2" });
