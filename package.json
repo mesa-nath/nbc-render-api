@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-  "postinstall": "npx playwright install --with-deps"
+    "postinstall": "npx playwright install --with-deps chromium"
   },
   "dependencies": {
     "axios": "^1.13.5",
@@ -16,7 +16,7 @@
     "xlsx": "^0.18.5"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=18.0.0"
   },
   "license": "ISC",
   "keywords": []
