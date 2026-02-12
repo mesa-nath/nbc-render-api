@@ -1,4 +1,5 @@
-// server.js
+process.env.PUPPETEER_CACHE_DIR = '/opt/render/.cache/puppeteer';
+
 console.log('*** server.js loading ***');
 
 const express = require('express');
@@ -13,32 +14,35 @@ app.get('/', (req, res) => {
 
 async function getNbcRates(date) {
   const url = "https://www.nbc.gov.kh/english/economic_research/exchange_rate.php";
+
   const browser = await puppeteer.launch({ 
     headless: true,
+    executablePath: puppeteer.executablePath(), // ✅ correct path
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage'
+    ],
+  });
 
-    args: ['--no-sandbox', '--disable-setuid-sandbox',  '--disable-dev-shm-usage'],
-    executablePath: process.env.CHROME_BIN || undefined, // Render will use bundled Chromium
-
-   });
   const page = await browser.newPage();
-
   await page.goto(url, { waitUntil: "networkidle2" });
 
-  // Set the date in the date picker
+  // Set date
   await page.evaluate((d) => {
     document.querySelector('#datepicker').value = d;
   }, date);
 
-  // Click the View button
+  // Click view
   await page.click('input[name="view"]');
 
-  // Wait for the table to appear (replaces waitForTimeout)
+  // Wait table load
   await page.waitForSelector('table tr');
 
-  // Scrape the table
   const rates = await page.evaluate(() => {
     const rows = document.querySelectorAll('table tr');
     const result = [];
+
     rows.forEach(tr => {
       const tds = tr.querySelectorAll('td');
       if (tds.length >= 6) {
@@ -51,6 +55,7 @@ async function getNbcRates(date) {
         }
       }
     });
+
     return result;
   });
 
@@ -58,7 +63,7 @@ async function getNbcRates(date) {
   return rates;
 }
 
-// API endpoint
+// API
 app.get("/nbcRate", async (req, res) => {
   try {
     const rawDate = req.query.date || new Date().toISOString().slice(0, 10);
@@ -72,7 +77,7 @@ app.get("/nbcRate", async (req, res) => {
       rates
     });
   } catch (err) {
-    console.error("NBC converter error:", err.message);
+    console.error("NBC converter error:", err);
     res.status(500).json({ error: err.message });
   }
 });
