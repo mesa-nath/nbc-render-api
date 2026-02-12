@@ -1,4 +1,3 @@
-process.env.PUPPETEER_CACHE_DIR = '/opt/render/.cache/puppeteer';
 
 console.log('*** server.js loading ***');
 
@@ -14,35 +13,32 @@ app.get('/', (req, res) => {
 
 async function getNbcRates(date) {
   const url = "https://www.nbc.gov.kh/english/economic_research/exchange_rate.php";
-
   const browser = await puppeteer.launch({ 
     headless: true,
-    executablePath: puppeteer.executablePath(), // ✅ correct path
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage'
-    ],
+    executablePath: puppeteer.executablePath(),
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   });
 
   const page = await browser.newPage();
   await page.goto(url, { waitUntil: "networkidle2" });
 
-  // Set date
-  await page.evaluate((d) => {
-    document.querySelector('#datepicker').value = d;
-  }, date);
+  // Set date properly
+  await page.focus('#datepicker');
+  await page.click('#datepicker', { clickCount: 3 });
+  await page.keyboard.type(date);
 
-  // Click view
-  await page.click('input[name="view"]');
+  // Click View and wait for page reload
+  await Promise.all([
+    page.click('input[name="view"]'),
+    page.waitForNavigation({ waitUntil: 'networkidle2' })
+  ]);
 
-  // Wait table load
-  await page.waitForSelector('table tr');
+  // Now the table should exist
+  await page.waitForSelector('table');
 
   const rates = await page.evaluate(() => {
     const rows = document.querySelectorAll('table tr');
     const result = [];
-
     rows.forEach(tr => {
       const tds = tr.querySelectorAll('td');
       if (tds.length >= 6) {
@@ -55,7 +51,6 @@ async function getNbcRates(date) {
         }
       }
     });
-
     return result;
   });
 
