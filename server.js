@@ -1,7 +1,8 @@
 // *** server.js ***
 console.log('*** server.js loading ***');
-
+const { getBrowser } = require('./browser');
 const express = require('express');
+
 const { chromium } = require('playwright');
 
 const app = express();
@@ -17,10 +18,7 @@ app.get('/', (req, res) => {
  * - All other currencies are parsed from the main table rows.
  */
 async function getNbcRates(date) {
-  const browser = await chromium.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process'],
-  });
+   const browser = await getBrowser();
 
   const page = await browser.newPage();
 
